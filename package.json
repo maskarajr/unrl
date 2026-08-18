@@ -1,0 +1,58 @@
+{
+  "name": "unrl",
+  "version": "0.1.0",
+  "description": "Preview: TLD-routed name resolution for ENS, SNS, Base Names, and Unstoppable Domains",
+  "license": "MIT",
+  "author": "maskarajr",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maskarajr/unrl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/maskarajr/unrl/issues"
+  },
+  "homepage": "https://github.com/maskarajr/unrl#readme",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "vitest run --config vitest.live.config.mts",
+    "lab": "npm --prefix test run dev",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "ens",
+    "sns",
+    "basenames",
+    "unstoppable-domains",
+    "web3",
+    "naming",
+    "resolution"
+  ],
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.10"
+  }
+}
