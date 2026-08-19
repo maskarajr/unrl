@@ -1,8 +1,13 @@
 # UNRL — Universal Naming Resolution Layer
 
+[![CI](https://github.com/maskarajr/unrl/actions/workflows/ci.yml/badge.svg)](https://github.com/maskarajr/unrl/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@maskarajr/unrl.svg)](https://www.npmjs.com/package/@maskarajr/unrl)
+
 > One call. Name → address. TLD picks the module.
 
 **Status: `0.1.x` preview.** Thin TypeScript SDK — not a full identity/profile layer. Paste a name, get `{ address, resolver }`. Missing on-chain records → `address: null`. Unknown TLD / reverse miss → `resolver: null`.
+
+Install: [`@maskarajr/unrl`](https://www.npmjs.com/package/@maskarajr/unrl) (unscoped `unrl` is blocked on npm as too similar to existing names).
 
 ## Supported namespaces
 
@@ -16,7 +21,7 @@
 ## Install
 
 ```bash
-npm install unrl
+npm install @maskarajr/unrl
 ```
 
 Package is preview. Pin a version. Do not treat this as production identity infrastructure.
@@ -24,12 +29,12 @@ Package is preview. Pin a version. Do not treat this as production identity infr
 ## Quick start
 
 ```typescript
-import { UNRL } from "unrl";
+import { UNRL } from "@maskarajr/unrl";
 
 const unrl = new UNRL();
 
 await unrl.resolve("vitalik.eth");
-// { name, address, resolver: "ens", ttl }
+// { address: "0xd8dA…", resolver: "ens" }
 
 await unrl.resolve("toly.sol");   // resolver: "sns"
 await unrl.resolve("jesse.base"); // resolver: "basenames"
@@ -80,3 +85,9 @@ Wallets and dApps should not integrate every naming SDK. UNRL is TLD routing onl
 ## License
 
 MIT
+
+## More
+
+- [example](examples/resolve-names.ts)
+- [changelog](CHANGELOG.md)
+- [contributing](CONTRIBUTING.md)

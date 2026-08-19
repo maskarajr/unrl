@@ -1,12 +1,12 @@
-import type { ReverseResolvedName, ResolverName } from "../types";
+import type { ResolverReverseResult, ResolverName } from "../types";
 
 const JOIN = ", ";
 
 export function joinReverseHits(
   address: string,
-  hits: ReverseResolvedName[],
+  hits: ResolverReverseResult[],
   label: (name: string) => ResolverName | null
-): ReverseResolvedName {
+): ResolverReverseResult {
   const names: string[] = [];
   const resolvers: string[] = [];
   const seen = new Set<string>();

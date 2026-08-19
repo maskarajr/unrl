@@ -1,7 +1,7 @@
 import { createPublicClient, http } from "viem";
 import { base, mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
-import type { IResolver, ResolvedName, ReverseResolvedName } from "../types";
+import type { IResolver, ResolverForwardResult, ResolverReverseResult } from "../types";
 import { nonempty } from "../utils/address";
 
 /** User-facing `.base` names are ENS names `*.base.eth` on L1. */
@@ -54,7 +54,7 @@ export class BaseNamesResolver implements IResolver {
     });
   }
 
-  async resolve(name: string): Promise<ResolvedName> {
+  async resolve(name: string): Promise<ResolverForwardResult> {
     try {
       const address = await this.l1Client.getEnsAddress({
         name: normalize(toBaseEnsName(name)),
@@ -71,8 +71,8 @@ export class BaseNamesResolver implements IResolver {
     }
   }
 
-  async reverseResolve(address: string): Promise<ReverseResolvedName> {
-    const empty: ReverseResolvedName = {
+  async reverseResolve(address: string): Promise<ResolverReverseResult> {
+    const empty: ResolverReverseResult = {
       address,
       name: null,
       resolver: "basenames",

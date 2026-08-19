@@ -31,27 +31,19 @@ describe("UNRL.resolve unsupported names", () => {
   it("does not call a chain resolver", async () => {
     const result = await unrl.resolve("unknown.xyz" as string);
     expect(result).toEqual({
-      name: "unknown.xyz",
       address: null,
       resolver: null,
-      ttl: 0,
     });
   });
 
   it("normalizes name on miss", async () => {
     const result = await unrl.resolve("  Foo.COM  " as string);
-    expect(result.name).toBe("foo.com");
-    expect(result.address).toBeNull();
-    expect(result.ttl).toBe(0);
-    expect(result.resolver).toBeNull();
+    expect(result).toEqual({ address: null, resolver: null });
   });
 
   it("does not treat a bare TLD as a name", async () => {
     const result = await unrl.resolve("eth" as string);
-    expect(result.name).toBe("eth");
-    expect(result.address).toBeNull();
-    expect(result.resolver).toBeNull();
-    expect(result.ttl).toBe(0);
+    expect(result).toEqual({ address: null, resolver: null });
   });
 });
 
@@ -60,8 +52,6 @@ describe("UNRL.reverseResolve misses", () => {
 
   it("does not label a miss as ens", async () => {
     const result = await unrl.reverseResolve("not-a-wallet");
-    expect(result.address).toBe("not-a-wallet");
-    expect(result.name).toBeNull();
-    expect(result.resolver).toBeNull();
+    expect(result).toEqual({ name: null, resolver: null });
   });
 });

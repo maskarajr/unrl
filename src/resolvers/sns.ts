@@ -1,4 +1,4 @@
-import type { IResolver, ResolvedName, ReverseResolvedName } from "../types";
+import type { IResolver, ResolverForwardResult, ResolverReverseResult } from "../types";
 import { nonempty, isSolanaAddress } from "../utils/address";
 
 const SNS_API = "https://sdk-proxy-v2.sns.id";
@@ -24,7 +24,7 @@ export class SNSResolver implements IResolver {
     return url.toString();
   }
 
-  async resolve(name: string): Promise<ResolvedName> {
+  async resolve(name: string): Promise<ResolverForwardResult> {
     try {
       const res = await fetch(this.endpoint(`resolve/${encodeURIComponent(name)}`));
       if (!res.ok) throw new Error("SNS resolve failed");
@@ -44,7 +44,7 @@ export class SNSResolver implements IResolver {
     }
   }
 
-  async reverseResolve(address: string): Promise<ReverseResolvedName> {
+  async reverseResolve(address: string): Promise<ResolverReverseResult> {
     try {
       const res = await fetch(
         this.endpoint(`reverse-lookup/${encodeURIComponent(address)}`)

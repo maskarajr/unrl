@@ -2,8 +2,8 @@ import { createPublicClient, http, namehash } from "viem";
 import { mainnet, polygon } from "viem/chains";
 import type {
   IResolver,
-  ResolvedName,
-  ReverseResolvedName,
+  ResolverForwardResult,
+  ResolverReverseResult,
   SupportedTLD,
 } from "../types";
 import { firstUsableEvmAddress, nonempty } from "../utils/address";
@@ -130,7 +130,7 @@ export class UnstoppableResolver implements IResolver {
     });
   }
 
-  async resolve(name: string): Promise<ResolvedName> {
+  async resolve(name: string): Promise<ResolverForwardResult> {
     if (this.apiKey) {
       const fromApi = await this.resolveViaApi(name);
       if (fromApi) {
@@ -156,8 +156,8 @@ export class UnstoppableResolver implements IResolver {
     }
   }
 
-  async reverseResolve(address: string): Promise<ReverseResolvedName> {
-    const empty: ReverseResolvedName = {
+  async reverseResolve(address: string): Promise<ResolverReverseResult> {
+    const empty: ResolverReverseResult = {
       address,
       name: null,
       resolver: "unstoppable",

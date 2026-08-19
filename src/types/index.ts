@@ -38,23 +38,30 @@ export type CheckName<T extends string> = string extends T
     : `Not a valid name: ${T}`;
 
 export interface ResolvedName {
-  /** The input name that was resolved */
-  name: string;
-  /** The resolved wallet address */
   address: string | null;
-  /** Which resolver handled this. Null when no module ran. */
   resolver: ResolverName | null;
-  /** How long to cache this result (ms) */
-  ttl: number;
 }
 
 export interface ReverseResolvedName {
-  /** The input address that was reverse-resolved */
-  address: string;
-  /** Primary name(s), comma-separated when several namespaces hit */
   name: string | null;
-  /** Matching resolver(s), comma-separated in the same order as name */
   resolver: string | null;
+}
+
+/** Resolver + cache payload. Not part of the public result. */
+export interface ResolverForwardResult extends ResolvedName {
+  name: string;
+  ttl: number;
+}
+
+export interface ResolverReverseResult extends ReverseResolvedName {
+  address: string;
+}
+
+export interface IResolver {
+  name: ResolverName;
+  supportedTLDs: readonly SupportedTLD[];
+  resolve(name: string): Promise<ResolverForwardResult>;
+  reverseResolve?(address: string): Promise<ResolverReverseResult>;
 }
 
 export interface ResolverConfig {
@@ -68,11 +75,4 @@ export interface ResolverConfig {
   cacheTtl?: number;
   /** Disable cache entirely */
   noCache?: boolean;
-}
-
-export interface IResolver {
-  name: ResolverName;
-  supportedTLDs: readonly SupportedTLD[];
-  resolve(name: string): Promise<ResolvedName>;
-  reverseResolve?(address: string): Promise<ReverseResolvedName>;
 }

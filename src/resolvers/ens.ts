@@ -1,7 +1,7 @@
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { normalize } from "viem/ens";
-import type { IResolver, ResolvedName, ReverseResolvedName } from "../types";
+import type { IResolver, ResolverForwardResult, ResolverReverseResult } from "../types";
 
 export class ENSResolver implements IResolver {
   name = "ens" as const;
@@ -16,7 +16,7 @@ export class ENSResolver implements IResolver {
     });
   }
 
-  async resolve(name: string): Promise<ResolvedName> {
+  async resolve(name: string): Promise<ResolverForwardResult> {
     try {
       const address = await this.client.getEnsAddress({
         name: normalize(name),
@@ -32,7 +32,7 @@ export class ENSResolver implements IResolver {
     }
   }
 
-  async reverseResolve(address: string): Promise<ReverseResolvedName> {
+  async reverseResolve(address: string): Promise<ResolverReverseResult> {
     try {
       const resolved = await this.client.getEnsName({
         address: address as `0x${string}`,

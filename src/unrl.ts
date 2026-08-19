@@ -9,7 +9,9 @@ import type {
   ResolvedName,
   ReverseResolvedName,
   ResolverConfig,
+  ResolverForwardResult,
   ResolverName,
+  ResolverReverseResult,
   SupportedTLD,
 } from "./types";
 import { joinReverseHits } from "./utils/reverse";
@@ -17,18 +19,26 @@ import { extractTLD, hasNameAndTld, isSupportedTLD } from "./utils/tld";
 
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 
+function publicForward(result: ResolverForwardResult): ResolvedName {
+  return { address: result.address, resolver: result.resolver };
+}
+
+function publicReverse(result: ResolverReverseResult): ReverseResolvedName {
+  return { name: result.name, resolver: result.resolver };
+}
+
 export class UNRL {
   private resolvers: Map<SupportedTLD, IResolver> = new Map();
-  private cache: TTLCache<ResolvedName>;
-  private reverseCache: TTLCache<ReverseResolvedName>;
+  private cache: TTLCache<ResolverForwardResult>;
+  private reverseCache: TTLCache<ResolverReverseResult>;
   private noCache: boolean;
   private cacheTtl: number;
 
   constructor(config: ResolverConfig = {}) {
     this.noCache = config.noCache ?? false;
     this.cacheTtl = config.cacheTtl ?? DEFAULT_TTL;
-    this.cache = new TTLCache<ResolvedName>(1024);
-    this.reverseCache = new TTLCache<ReverseResolvedName>(1024);
+    this.cache = new TTLCache<ResolverForwardResult>(1024);
+    this.reverseCache = new TTLCache<ResolverReverseResult>(1024);
 
     // Register all resolvers
     const resolvers: IResolver[] = [
@@ -61,24 +71,19 @@ export class UNRL {
 
     if (!this.noCache) {
       const cached = this.cache.get(cacheKey);
-      if (cached) return cached;
+      if (cached) return publicForward(cached);
     }
 
     const tld = extractTLD(normalized);
 
     if (!hasNameAndTld(normalized) || !isSupportedTLD(tld)) {
-      return {
-        name: normalized,
-        address: null,
-        resolver: null,
-        ttl: 0,
-      };
+      return { address: null, resolver: null };
     }
 
     const resolver = this.resolvers.get(tld);
 
     if (!resolver) {
-      return { name: normalized, address: null, resolver: null, ttl: 0 };
+      return { address: null, resolver: null };
     }
 
     const result = await resolver.resolve(normalized);
@@ -87,7 +92,7 @@ export class UNRL {
       this.cache.set(cacheKey, result, Math.min(result.ttl, this.cacheTtl));
     }
 
-    return result;
+    return publicForward(result);
   }
 
   /**
@@ -107,11 +112,10 @@ export class UNRL {
 
     if (!this.noCache) {
       const cached = this.reverseCache.get(cacheKey);
-      if (cached) return cached;
+      if (cached) return publicReverse(cached);
     }
 
     const empty: ReverseResolvedName = {
-      address,
       name: null,
       resolver: null,
     };
@@ -145,7 +149,7 @@ export class UNRL {
     if (!this.noCache) {
       this.reverseCache.set(cacheKey, joined, this.cacheTtl);
     }
-    return joined;
+    return publicReverse(joined);
   }
 
   /**

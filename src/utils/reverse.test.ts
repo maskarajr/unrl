@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { joinReverseHits } from "./reverse";
-import type { ReverseResolvedName, ResolverName } from "../types";
+import type { ResolverReverseResult, ResolverName } from "../types";
 
 function hit(
   name: string | null,
   resolver: ResolverName | null
-): ReverseResolvedName {
+): ResolverReverseResult {
   return { address: "0xabc", name, resolver };
 }
 
