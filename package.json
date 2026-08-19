@@ -1,5 +1,5 @@
 {
-  "name": "unrl",
+  "name": "@maskarajr/unrl",
   "version": "0.1.0",
   "description": "Preview: TLD-routed name resolution for ENS, SNS, Base Names, and Unstoppable Domains",
   "license": "MIT",
@@ -34,17 +34,20 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:live": "vitest run --config vitest.live.config.mts",
-    "lab": "npm --prefix test run dev",
+    "example": "npx tsx examples/resolve-names.ts",
     "prepack": "npm run build"
   },
   "keywords": [
     "ens",
+    "solana",
+    "web3",
+    "typescript",
+    "naming",
+    "blockchain",
+    "sdk",
     "sns",
     "basenames",
-    "unstoppable-domains",
-    "web3",
-    "naming",
-    "resolution"
+    "unstoppable-domains"
   ],
   "dependencies": {
     "viem": "^2.21.0"
