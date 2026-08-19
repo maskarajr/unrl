@@ -43,17 +43,25 @@ After you are happy: merge the PR into `develop`, live-test that branch, then op
 
 ## Release
 
-Each GitHub Release is the source of truth for that version (notes = changelog section).
+One manual workflow publishes **both** npmjs and GitHub Packages. No separate npm CLI / GitHub Packages steps.
 
-1. On `develop`: bump `package.json` version, move **Unreleased** into `CHANGELOG.md` as `## x.y.z`
-2. PR `develop` → `main` and merge
-3. GitHub → **Releases** → tag `vX.Y.Z` on `main`, paste that changelog section
-4. `Publish` workflow:
-   - npmjs (`@maskarajr/unrl`) via Trusted Publishing
-   - GitHub Packages (sidebar **Packages**)
+1. Merge `develop` → `main` after you have tested
+2. Actions → **Publish** → Run workflow
+   - `bump`: `patch` / `minor` / `major`
+   - `branch`: `main`
+   - `dry_run`: tick to rehearse without pushing or publishing
+3. The job bumps semver, cuts `CHANGELOG.md`, tags `vX.Y.Z`, opens the GitHub Release, then `npm publish` to npmjs **and** GitHub Packages
 
-One-time npm setup: package → **Trusted Publisher** → GitHub Actions:
+Do not create GitHub Releases by hand — that used to be a second publish path.
 
+### npm Trusted Publisher (once)
+
+On https://www.npmjs.com/package/@maskarajr/unrl/access :
+
+- Publisher: **GitHub Actions**
 - Organization or user: `maskarajr`
 - Repository: `unrl`
 - Workflow filename: `publish.yml`
+- Environment: leave empty
+
+OIDC is compatible with 2FA. Do not add `NPM_TOKEN`.
