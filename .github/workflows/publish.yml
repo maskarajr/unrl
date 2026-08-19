@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  packages: write
 
 jobs:
   npm:
@@ -21,4 +22,20 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - run: npm publish --access public
+      - name: Publish to npmjs
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VER" version >/dev/null 2>&1; then
+            echo "$NAME@$VER already on npmjs — skip"
+          else
+            npm publish --access public
+          fi
+      - name: Publish to GitHub Packages
+        run: |
+          CFG="$RUNNER_TEMP/github.npmrc"
+          echo "@maskarajr:registry=https://npm.pkg.github.com" > "$CFG"
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> "$CFG"
+          NPM_CONFIG_USERCONFIG="$CFG" npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

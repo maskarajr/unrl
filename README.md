@@ -89,5 +89,5 @@ MIT
 ## More
 
 - [example](examples/resolve-names.ts)
-- [changelog](CHANGELOG.md)
-- [contributing](CONTRIBUTING.md)
+- [changelog](CHANGELOG.md) — per-version notes; GitHub Releases copy the same
+- [contributing](CONTRIBUTING.md) — PRs target `develop`; test with `gh pr checkout` before merge to `main`
