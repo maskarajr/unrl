@@ -90,4 +90,4 @@ MIT
 
 - [example](examples/resolve-names.ts)
 - [changelog](CHANGELOG.md) — per-version notes; GitHub Releases copy the same
-- [contributing](CONTRIBUTING.md) — PRs → `develop`; Actions → **Publish** (semver + npmjs + GitHub Packages)
+- [contributing](CONTRIBUTING.md) — PRs from a feature branch into `main`
