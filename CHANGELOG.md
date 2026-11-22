@@ -5,6 +5,12 @@ GitHub Releases use the same sections per tag (`vX.Y.Z`).
 
 ## Unreleased
 
+## 0.1.1 — 2026-11-22
+
+### Fixed
+
+- Full MIT license text in `LICENSE` (replaces placeholder `LICENSE.md`)
+
 ## 0.1.0 — 2026-08-18
 
 First public preview. Package name is `@maskarajr/unrl` (unscoped `unrl` rejected by npm as too similar to existing names).
