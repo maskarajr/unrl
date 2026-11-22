@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { UNRL } from "./unrl";
 
 describe("UNRL.whichResolver", () => {
@@ -53,5 +53,92 @@ describe("UNRL.reverseResolve misses", () => {
   it("does not label a miss as ens", async () => {
     const result = await unrl.reverseResolve("not-a-wallet");
     expect(result).toEqual({ name: null, resolver: null });
+  });
+});
+
+const BONFIDA_OWNER = "Fw1ETanDZafof7xEULsnq9UY6o71Tpds89tNwPkWLb1v";
+const NO_PRIMARY = "11111111111111111111111111111111";
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+describe("UNRL.reverseResolve Solana", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("returns the SNS primary domain", async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        s: "ok",
+        result: {
+          domain: "AgJujvNQgYESUwBPitq2VUrfTaT2bvueHbgvsxqZ2sHg",
+          reverse: "couponvault",
+          stale: false,
+        },
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const unrl = new UNRL({ noCache: true });
+    await expect(unrl.reverseResolve(BONFIDA_OWNER)).resolves.toEqual({
+      name: "couponvault.sol",
+      resolver: "sns",
+    });
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain(`primary-domain/${BONFIDA_OWNER}`);
+    expect(url).not.toContain("reverse-lookup");
+  });
+
+  it("returns nulls when the wallet has no primary domain", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({ s: "ok", result: null }))
+    );
+
+    const unrl = new UNRL({ noCache: true });
+    await expect(unrl.reverseResolve(NO_PRIMARY)).resolves.toEqual({
+      name: null,
+      resolver: null,
+    });
+  });
+
+  it("passes a mixed-case Solana address to SNS unmodified", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes(`primary-domain/${BONFIDA_OWNER}`)) {
+        return jsonResponse({ s: "ok", result: { reverse: "couponvault" } });
+      }
+      return jsonResponse({ s: "error", result: "wrong address" }, 400);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const unrl = new UNRL({ noCache: true });
+    await expect(unrl.reverseResolve(BONFIDA_OWNER)).resolves.toEqual({
+      name: "couponvault.sol",
+      resolver: "sns",
+    });
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain(BONFIDA_OWNER);
+    expect(url).not.toContain(BONFIDA_OWNER.toLowerCase());
+  });
+
+  it("returns nulls for invalid input", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const unrl = new UNRL({ noCache: true });
+    await expect(unrl.reverseResolve("not-a-wallet")).resolves.toEqual({
+      name: null,
+      resolver: null,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -21,3 +21,8 @@ const reverse = await unrl.reverseResolve(
   "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 );
 console.log("reverse", reverse);
+
+const reverseSol = await unrl.reverseResolve(
+  "Fw1ETanDZafof7xEULsnq9UY6o71Tpds89tNwPkWLb1v"
+);
+console.log("reverse", reverseSol);

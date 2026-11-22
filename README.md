@@ -43,7 +43,10 @@ await unrl.resolve("brad.crypto"); // resolver: "unstoppable"
 
 await unrl.reverseResolve("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045");
 // { name: "vitalik.eth", resolver: "ens" }
-// extra hits: "foo.eth, foo.base.eth" / "ens, basenames"
+// extra EVM hits: "foo.eth, foo.base.eth" / "ens, basenames"
+
+await unrl.reverseResolve("Fw1ETanDZafof7xEULsnq9UY6o71Tpds89tNwPkWLb1v");
+// { name: "couponvault.sol", resolver: "sns" }
 
 await unrl.resolveMany(["vitalik.eth", "toly.sol"]);
 unrl.whichResolver("toly.sol"); // "sns"

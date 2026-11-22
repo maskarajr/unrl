@@ -44,6 +44,14 @@ describe("live reverse resolve", () => {
     expect(result.name?.split(", ").includes("vitalik.eth")).toBe(true);
     expect(result.resolver?.split(", ").includes("ens")).toBe(true);
   });
+
+  it("reverse-resolves a Solana wallet to its SNS primary domain", async () => {
+    const result = await unrl.reverseResolve(
+      "Fw1ETanDZafof7xEULsnq9UY6o71Tpds89tNwPkWLb1v"
+    );
+    expect(result.resolver).toBe("sns");
+    expect(result.name?.endsWith(".sol")).toBe(true);
+  });
 });
 
 describe("live batch", () => {
