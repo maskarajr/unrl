@@ -8,6 +8,12 @@ const version = process.argv[2] ?? pkg.version;
 const tag = `v${version}`;
 const spec = `${pkg.name}@${version}`;
 
+function envWithoutNodeAuth(extra = {}) {
+  const env = { ...process.env, ...extra };
+  delete env.NODE_AUTH_TOKEN;
+  return env;
+}
+
 function run(cmd, args, opts = {}) {
   return spawnSync(cmd, args, { encoding: "utf8", ...opts });
 }
@@ -15,6 +21,10 @@ function run(cmd, args, opts = {}) {
 function fail(label, r) {
   const err = `${r.stderr || ""}${r.stdout || ""}`.trim();
   throw new Error(`${label} failed (${r.status}): ${err}`);
+}
+
+function npmErr(r) {
+  return `${r.stderr || ""}${r.stdout || ""}`;
 }
 
 const tagR = run("git", [
@@ -30,15 +40,28 @@ if (tagR.status === 0) tag_exists = true;
 else if (tagR.status === 2) tag_exists = false;
 else fail("git ls-remote", tagR);
 
-const npmR = run("npm", ["view", spec, "version"]);
+const npmjsDir = mkdtempSync(join(tmpdir(), "npmjs-"));
+const npmjsCfg = join(npmjsDir, "npmrc");
+writeFileSync(npmjsCfg, "registry=https://registry.npmjs.org\n");
+const npmR = run("npm", ["view", spec, "version"], {
+  env: envWithoutNodeAuth({ NPM_CONFIG_USERCONFIG: npmjsCfg }),
+});
 let npm_exists;
 if (npmR.status === 0) npm_exists = npmR.stdout.trim() === version;
-else if ((npmR.stderr || "").includes("E404")) npm_exists = false;
-else fail("npm view npmjs", npmR);
+else {
+  const blob = npmErr(npmR);
+  if (/\bE401\b|\bE403\b/.test(blob)) {
+    throw new Error(
+      `npm view npmjs returned ${blob.includes("E401") ? "E401" : "E403"} for public package ${spec}. Do not send NODE_AUTH_TOKEN / GitHub tokens to registry.npmjs.org.\n${blob.trim()}`
+    );
+  }
+  if (blob.includes("E404")) npm_exists = false;
+  else fail("npm view npmjs", npmR);
+}
 
 let ghpkg_exists = false;
 let ghpkg_checked = false;
-const ghToken = process.env.NODE_AUTH_TOKEN || process.env.GITHUB_TOKEN || "";
+const ghToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 if (ghToken) {
   ghpkg_checked = true;
   const dir = mkdtempSync(join(tmpdir(), "ghpkg-"));
@@ -48,11 +71,12 @@ if (ghToken) {
     `//npm.pkg.github.com/:_authToken=${ghToken}\n@maskarajr:registry=https://npm.pkg.github.com\n`
   );
   const g = run("npm", ["view", spec, "version", "--registry=https://npm.pkg.github.com"], {
-    env: { ...process.env, NPM_CONFIG_USERCONFIG: cfg },
+    env: envWithoutNodeAuth({ NPM_CONFIG_USERCONFIG: cfg }),
   });
   if (g.status === 0) ghpkg_exists = g.stdout.trim() === version;
-  else if ((g.stderr || "").includes("E404")) ghpkg_exists = false;
-  else fail("npm view github packages", g);
+  else if ((g.stderr || "").includes("E404") || (g.stdout || "").includes("E404")) {
+    ghpkg_exists = false;
+  } else fail("npm view github packages", g);
 }
 
 let release_exists = false;
