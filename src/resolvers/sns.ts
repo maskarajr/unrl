@@ -18,6 +18,11 @@ function snsPrimaryLabel(result: SnsEnvelope["result"]): string | null {
   return null;
 }
 
+/** v2 `/resolve` rejects `.sol` after SRS cutoff; `.sns` is the SNS-backed path. */
+function snsResolveDomain(name: string): string {
+  return name.replace(/\.sol$/i, ".sns");
+}
+
 export class SNSResolver implements IResolver {
   name = "sns" as const;
   supportedTLDs = ["sol"] as const;
@@ -36,7 +41,9 @@ export class SNSResolver implements IResolver {
 
   async resolve(name: string): Promise<ResolverForwardResult> {
     try {
-      const res = await fetch(this.endpoint(`resolve/${encodeURIComponent(name)}`));
+      const res = await fetch(
+        this.endpoint(`resolve/${encodeURIComponent(snsResolveDomain(name))}`)
+      );
       if (!res.ok) throw new Error("SNS resolve failed");
 
       const data = (await res.json()) as SnsEnvelope;

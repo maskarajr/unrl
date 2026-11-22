@@ -23,6 +23,20 @@ describe("live forward resolve", () => {
     expect(isEvmAddress(result.address)).toBe(false);
   });
 
+  it("resolves bonfida.sol via SNS to the known owner", async () => {
+    const result = await unrl.resolve("bonfida.sol");
+    expect(result.resolver).toBe("sns");
+    expect(result.address).toBe(
+      "Fw1ETanDZafof7xEULsnq9UY6o71Tpds89tNwPkWLb1v"
+    );
+  });
+
+  it("returns null for a nonexistent .sol name", async () => {
+    const result = await unrl.resolve("thisnamedoesnotexist12345.sol");
+    expect(result.resolver).toBe("sns");
+    expect(result.address).toBeNull();
+  });
+
   it("resolves a .base name via Base Names to an EVM address", async () => {
     const result = await unrl.resolve("jesse.base");
     expect(result.resolver).toBe("basenames");
