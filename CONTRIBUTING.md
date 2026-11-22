@@ -41,5 +41,5 @@ Switch back with `git checkout main`.
 - Keep the SDK thin: TLD routing, not profiles/avatars/L2 pickers
 - Offline tests in `src/**/*.test.ts` for behavior changes
 - Add a `CHANGELOG.md` entry under **Unreleased** when the PR changes shipped behavior
-- Do not bump versions in PRs; run the Publish workflow (Actions > Publish > bump) after merging
+- Release PRs: bump version (`npm version X --no-git-tag-version`) and move **Unreleased** to a `## X.Y.Z — date` section. Merging to `main` releases it.
 - Do not commit `.env`, `dist/`, or `test/`
