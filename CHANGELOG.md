@@ -5,6 +5,12 @@ GitHub Releases use the same sections per tag (`vX.Y.Z`).
 
 ## Unreleased
 
+## 0.1.2 — 2026-11-22
+
+### Fixed
+
+- `.sol` forward resolve via SNS v2 (`/resolve/{name}.sns`); v2 rejects `.sol` after the SRS slot cutoff
+
 ## 0.1.1 — 2026-11-22
 
 ### Added
