@@ -1,6 +1,6 @@
 {
   "name": "@maskarajr/unrl",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Preview: TLD-routed name resolution for ENS, SNS, Base Names, and Unstoppable Domains",
   "license": "MIT",
   "author": "maskarajr",
