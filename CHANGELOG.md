@@ -5,11 +5,11 @@ GitHub Releases use the same sections per tag (`vX.Y.Z`).
 
 ## Unreleased
 
+## 0.1.1 — 2026-11-22
+
 ### Added
 
 - `UNRL.reverseResolve` Solana wallets via SNS primary domain (`{ name, resolver: "sns" }`)
-
-## 0.1.1 — 2026-11-22
 
 ### Fixed
 

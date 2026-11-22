@@ -1,19 +1,18 @@
 name: Publish
 
 on:
+  push:
+    branches: [main]
+    # package.json is the version-bump signal. Include this workflow so the
+    # first landing of auto-release still runs when package.json already
+    # matches main (0.1.1). Later workflow-only pushes are idempotent.
+    paths:
+      - package.json
+      - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
-      bump:
-        description: Semver bump
-        type: choice
-        options: [patch, minor, major]
-        default: patch
-      branch:
-        description: Branch to release from (production)
-        type: string
-        default: main
       dry_run:
-        description: Bump and build only — no git push, no npm
+        description: Test and extract notes only — no tag, release, or npm
         type: boolean
         default: false
 
@@ -21,6 +20,8 @@ concurrency:
   group: publish
   cancel-in-progress: false
 
+# Filename must stay publish.yml — npm trusted publishing is bound to it.
+# https://docs.npmjs.com/trusted-publishers/
 permissions:
   contents: write
   id-token: write
@@ -28,49 +29,77 @@ permissions:
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
-          fetch-depth: 0
+          persist-credentials: true
 
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           registry-url: https://registry.npmjs.org
 
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-
-      - name: Bump version and changelog
-        run: |
-          npm version "${{ inputs.bump }}" --no-git-tag-version
-          VER=$(node -p "require('./package.json').version")
-          echo "VERSION=$VER" >> "$GITHUB_ENV"
-          node scripts/cut-changelog.mjs "$VER"
-
-      - name: Commit tag and GitHub Release
-        if: ${{ inputs.dry_run != 'true' }}
+      - name: Skip if this version is already fully released
+        id: gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/release-gate.mjs
+
+      - name: Already released
+        if: steps.gate.outputs.skip_all == 'true'
+        run: echo "v${{ steps.gate.outputs.version }} already tagged and published; nothing to do"
+
+      - if: steps.gate.outputs.skip_all != 'true'
+        run: npm ci
+      - if: steps.gate.outputs.skip_all != 'true'
+        run: npm test
+      - if: steps.gate.outputs.skip_all != 'true'
+        run: npm run build
+
+      - name: Extract changelog notes
+        if: steps.gate.outputs.skip_all != 'true'
+        run: node scripts/extract-changelog.mjs "${{ steps.gate.outputs.version }}"
+
+      - name: Create tag
+        if: >-
+          steps.gate.outputs.skip_all != 'true'
+          && steps.gate.outputs.need_tag == 'true'
+          && github.event.inputs.dry_run != 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json CHANGELOG.md
-          git commit -m "chore(release): ${VERSION}"
-          git tag "v${VERSION}"
-          git push origin "HEAD:${{ inputs.branch }}"
-          git push origin "v${VERSION}"
-          gh release create "v${VERSION}" --title "${VERSION}" -F RELEASE_NOTES.md
+          git tag "${{ steps.gate.outputs.tag }}"
+          git push origin "${{ steps.gate.outputs.tag }}"
+
+      - name: GitHub Release
+        if: >-
+          steps.gate.outputs.skip_all != 'true'
+          && steps.gate.outputs.need_release == 'true'
+          && github.event.inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release create "${{ steps.gate.outputs.tag }}"
+          --title "${{ steps.gate.outputs.version }}"
+          -F RELEASE_NOTES.md
 
       - name: Publish to npmjs
-        if: ${{ inputs.dry_run != 'true' }}
+        if: >-
+          steps.gate.outputs.skip_all != 'true'
+          && steps.gate.outputs.need_npm == 'true'
+          && github.event.inputs.dry_run != 'true'
         run: npm publish --access public
 
       - name: Publish to GitHub Packages
-        if: ${{ inputs.dry_run != 'true' }}
+        if: >-
+          steps.gate.outputs.skip_all != 'true'
+          && steps.gate.outputs.need_ghpkg == 'true'
+          && github.event.inputs.dry_run != 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
