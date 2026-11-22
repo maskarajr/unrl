@@ -3,9 +3,19 @@ import { nonempty, isSolanaAddress } from "../utils/address";
 
 const SNS_API = "https://sdk-proxy-v2.sns.id";
 
+interface SnsPrimary {
+  reverse?: string;
+}
+
 interface SnsEnvelope {
   s?: string;
-  result?: string;
+  result?: string | SnsPrimary | null;
+}
+
+function snsPrimaryLabel(result: SnsEnvelope["result"]): string | null {
+  if (typeof result === "string") return nonempty(result);
+  if (result && typeof result === "object") return nonempty(result.reverse);
+  return null;
 }
 
 export class SNSResolver implements IResolver {
@@ -32,7 +42,10 @@ export class SNSResolver implements IResolver {
       const data = (await res.json()) as SnsEnvelope;
       if (data.s !== "ok") throw new Error("SNS resolve error");
 
-      const address = isSolanaAddress(data.result) ? data.result.trim() : null;
+      const address =
+        typeof data.result === "string" && isSolanaAddress(data.result)
+          ? data.result.trim()
+          : null;
       return {
         name,
         address,
@@ -47,14 +60,14 @@ export class SNSResolver implements IResolver {
   async reverseResolve(address: string): Promise<ResolverReverseResult> {
     try {
       const res = await fetch(
-        this.endpoint(`reverse-lookup/${encodeURIComponent(address)}`)
+        this.endpoint(`primary-domain/${encodeURIComponent(address)}`)
       );
       if (!res.ok) throw new Error("SNS reverse lookup failed");
 
       const data = (await res.json()) as SnsEnvelope;
       if (data.s !== "ok") throw new Error("SNS reverse error");
 
-      const rawName = nonempty(data.result);
+      const rawName = snsPrimaryLabel(data.result);
       return {
         address,
         name: rawName

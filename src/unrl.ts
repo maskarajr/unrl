@@ -14,6 +14,7 @@ import type {
   ResolverReverseResult,
   SupportedTLD,
 } from "./types";
+import { isSolanaAddress } from "./utils/address";
 import { joinReverseHits } from "./utils/reverse";
 import { extractTLD, hasNameAndTld, isSupportedTLD } from "./utils/tld";
 
@@ -96,17 +97,45 @@ export class UNRL {
   }
 
   /**
-   * Reverse resolve a wallet address to human-readable names.
-   * Queries ENS, Base Names, and Unstoppable in parallel.
+   * Reverse resolve a wallet address to a human-readable name.
+   * 0x addresses query ENS, Base Names, and Unstoppable in parallel.
+   * Solana addresses query the SNS primary (.sol) domain.
    *
    * @example
    * await unrl.reverseResolve("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045");
    * // → { name: "vitalik.eth", resolver: "ens" }
-   * // several hits → "foo.eth, foo.base.eth", "ens, basenames"
+   * // several EVM hits → "foo.eth, foo.base.eth", "ens, basenames"
+   * await unrl.reverseResolve("Fw1ETanDZafof7xEULsnq9UY6o71Tpds89tNwPkWLb1v");
+   * // → { name: "couponvault.sol", resolver: "sns" }
    */
   async reverseResolve(
     address: string
   ): Promise<ReverseResolvedName> {
+    const empty: ReverseResolvedName = {
+      name: null,
+      resolver: null,
+    };
+
+    const solanaAddress = address.trim();
+    if (isSolanaAddress(solanaAddress)) {
+      const cacheKey = `rev:${solanaAddress}`;
+      if (!this.noCache) {
+        const cached = this.reverseCache.get(cacheKey);
+        if (cached) return publicReverse(cached);
+      }
+
+      const sns = this.resolvers.get("sol");
+      if (!sns?.reverseResolve) return empty;
+
+      const hit = await sns.reverseResolve(solanaAddress);
+      if (!hit.name) return empty;
+
+      if (!this.noCache) {
+        this.reverseCache.set(cacheKey, hit, this.cacheTtl);
+      }
+      return publicReverse(hit);
+    }
+
     const normalized = address.toLowerCase().trim();
     const cacheKey = `rev:${normalized}`;
 
@@ -114,11 +143,6 @@ export class UNRL {
       const cached = this.reverseCache.get(cacheKey);
       if (cached) return publicReverse(cached);
     }
-
-    const empty: ReverseResolvedName = {
-      name: null,
-      resolver: null,
-    };
 
     if (!/^0x[0-9a-fA-F]{40}$/.test(normalized)) {
       return empty;
